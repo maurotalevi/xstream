@@ -412,12 +412,6 @@
         <groupId>org.dom4j</groupId>
         <artifactId>dom4j</artifactId>
         <version>${version.org.dom4j}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>jaxen</groupId>
-            <artifactId>jaxen</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <dependency>
@@ -1127,7 +1121,7 @@
     <version.org.apache.felix>6.0.3</version.org.apache.felix>
     <version.org.codehaus.jettison>1.4.1</version.org.codehaus.jettison>
     <version.com.fasterxml.woodstox.core>5.2.0</version.com.fasterxml.woodstox.core>
-    <version.org.dom4j>2.0.2</version.org.dom4j>
+    <version.org.dom4j>2.1.1</version.org.dom4j>
     <version.org.hibernate.core>4.2.5.Final</version.org.hibernate.core>
     <version.org.hibernate.envers>${version.org.hibernate.core}</version.org.hibernate.envers>
     <version.org.jdom>1.1.3</version.org.jdom>
