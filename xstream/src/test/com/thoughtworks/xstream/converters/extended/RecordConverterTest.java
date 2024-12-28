@@ -14,8 +14,17 @@ package com.thoughtworks.xstream.converters.extended;
 import com.thoughtworks.acceptance.AbstractAcceptanceTest;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.ConversionException;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
+import com.thoughtworks.xstream.security.AnyTypePermission;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.IntStream;
+import junit.framework.Assert;
 
 
 /**
@@ -295,5 +304,73 @@ public class RecordConverterTest extends AbstractAcceptanceTest {
             }
             return throwableClass.cast(cause);
         }
+    }
+
+    public static final class MyObj
+    {
+        SerializableRecord field1 = new SerializableRecord( 1, 2 );
+        Object field2 = new SerializableRecord( 1, 2 );
+        Object field3 = new Object[] { new SerializableRecord( 1, 2 ) };
+
+        NotSerializableRecord field4 = new NotSerializableRecord( 1, 2 );
+        Object field5 = new NotSerializableRecord( 1, 2 );
+        Object field6 = new Object[] { new NotSerializableRecord( 1, 2 ) };
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if ( this == o )
+            {
+                return true;
+            }
+            if ( o == null || getClass() != o.getClass() )
+            {
+                return false;
+            }
+            final MyObj myObj = (MyObj) o;
+            return Objects.equals( field1, myObj.field1 ) &&
+                Objects.equals( field2, myObj.field2 ) &&
+                Arrays.equals( (Object[]) field3, (Object[]) myObj.field3 ) &&
+                Objects.equals( field4, myObj.field4 ) &&
+                Objects.equals( field5, myObj.field5 ) &&
+                Arrays.equals( (Object[]) field6, (Object[]) myObj.field6 );
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash( field1, field2, field3, field4, field5, field6 );
+        }
+    }
+
+    public record NotSerializableRecord(int a, int b) {}
+    public record SerializableRecord(int a, int b) implements Serializable {}
+
+    public void testMissingClassAttributeDoesNotCauseCrash()
+    {
+        final MyObj in = new MyObj();
+
+        final XStream xstream = new XStream( new StaxDriver() );
+        xstream.addPermission( AnyTypePermission.ANY);
+
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        xstream.toXML( in, bos );
+        final String expected = """
+<?xml version='1.0' encoding='UTF-8'?><com.thoughtworks.xstream.converters.extended.RecordConverterTest_-MyObj>
+<field1><a>1</a><b>2</b></field1><field2 class="com.thoughtworks.xstream.converters.extended.RecordConverterTest$SerializableRecord">
+<a>1</a><b>2</b></field2><field3 class="object-array">
+<com.thoughtworks.xstream.converters.extended.RecordConverterTest_-SerializableRecord><a>1</a><b>2</b>
+</com.thoughtworks.xstream.converters.extended.RecordConverterTest_-SerializableRecord></field3><field4><a>1</a>
+<b>2</b></field4><field5 class="com.thoughtworks.xstream.converters.extended.RecordConverterTest$NotSerializableRecord">
+<a>1</a><b>2</b></field5><field6 class="object-array">
+<com.thoughtworks.xstream.converters.extended.RecordConverterTest_-NotSerializableRecord><a>1</a><b>2</b>
+</com.thoughtworks.xstream.converters.extended.RecordConverterTest_-NotSerializableRecord></field6>
+</com.thoughtworks.xstream.converters.extended.RecordConverterTest_-MyObj>
+            """;
+        final String actual = bos.toString( StandardCharsets.UTF_8 );
+        Assert.assertEquals( expected.replace("\n", ""), actual );
+
+        final Object out = xstream.fromXML( new ByteArrayInputStream( bos.toByteArray() ) );
+        Assert.assertEquals( in, out );
     }
 }

@@ -153,7 +153,7 @@ public final class RecordConverter implements Converter {
      */
     @Override
     public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-        final Class<?> aRecord = findClass(reader);
+        final Class<?> aRecord = context.getRequiredType();
         if (!isRecord(aRecord)) {
             throw new ConversionException(aRecord + " is not a record");
         }
@@ -223,12 +223,6 @@ public final class RecordConverter implements Converter {
         } catch (ClassNotFoundException e) {
             throw new ConversionException("Class not found.", e);
         }
-    }
-
-    private static Class<?> findClass(HierarchicalStreamReader reader) {
-        String c = reader.getAttribute("class");
-        String className = c != null ? c : reader.getNodeName();
-        return classForName(className);
     }
 
     /**
